@@ -77,12 +77,21 @@ class DracoTranscoder {
   // transcoder once and call Transcode for multiple files.
   Status Transcode(const FileOptions &file_options);
 
+  template <typename U, typename V = U>
+  Status TranscodeStream(U *in_stream, V *out_stream);
+
  private:
   // Read scene from file.
   Status ReadScene(const FileOptions &file_options);
 
+  template <typename T>
+  Status ReadSceneStream(T *stream);
+
   // Write scene to file.
   Status WriteScene(const FileOptions &file_options);
+
+  template <typename T>
+  Status WriteSceneStream(T *stream);
 
   // Apply compression settings to the scene.
   Status CompressScene();

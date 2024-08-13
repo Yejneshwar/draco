@@ -17,7 +17,11 @@ if(DRACO_CMAKE_DRACO_OPTIONS_CMAKE_)
 endif() # DRACO_CMAKE_DRACO_OPTIONS_CMAKE_
 set(DRACO_CMAKE_DRACO_OPTIONS_CMAKE_)
 
-set(draco_features_file_name "${draco_build}/draco/draco_features.h")
+if(NOT DRACO_GENERATED_SOURCES_DIRECTORY)
+  set(DRACO_GENERATED_SOURCES_DIRECTORY "${draco_build}/gen_src")
+endif()
+
+set(draco_features_file_name "${DRACO_GENERATED_SOURCES_DIRECTORY}/draco/draco_features.h")
 set(draco_features_list)
 
 # Simple wrapper for CMake's builtin option command that tracks draco's build

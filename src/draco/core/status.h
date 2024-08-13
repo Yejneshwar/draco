@@ -70,9 +70,9 @@ inline Status ErrorStatus(const std::string &msg) {
 
 // Evaluates an expression that returns draco::Status. If the status is not OK,
 // the macro returns the status object.
-#define DRACO_RETURN_IF_ERROR(expression)             \
+#define DRACO_RETURN_IF_ERROR(...)             \
   {                                                   \
-    const draco::Status _local_status = (expression); \
+    const draco::Status _local_status = (__VA_ARGS__); \
     if (!_local_status.ok()) {                        \
       return _local_status;                           \
     }                                                 \

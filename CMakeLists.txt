@@ -37,6 +37,9 @@ if("${draco_root}" STREQUAL "${draco_build}")
       "And re-run CMake from the draco_build directory.")
 endif()
 
+#All generated files are placed in the gen_src directory.
+set(DRACO_GENERATED_SOURCES_DIRECTORY "${draco_build}/gen_src")
+
 include(FindPythonInterp)
 include("${draco_root}/cmake/draco_build_definitions.cmake")
 include("${draco_root}/cmake/draco_cpu_detection.cmake")
@@ -999,8 +1002,10 @@ else()
            draco_points_enc)
 
   if(DRACO_TRANSCODER_SUPPORTED)
-    list(APPEND draco_object_library_deps draco_material draco_scene
-                draco_texture)
+    list(
+      APPEND draco_object_library_deps
+             draco_material draco_scene
+             draco_texture)
 
   endif()
 
@@ -1023,7 +1028,7 @@ else()
       OUTPUT_NAME draco
       TYPE ${draco_lib_type}
       DEFINES ${draco_defines}
-      INCLUDES ${draco_include_paths}
+      PUBLIC_INCLUDES ${draco_include_paths}
       OBJLIB_DEPS ${draco_object_library_deps}
       LIB_DEPS ${draco_lib_deps})
     add_library(draco::draco ALIAS draco)
@@ -1129,6 +1134,16 @@ else()
               ${draco_io_sources}
       DEFINES ${draco_defines}
       INCLUDES ${draco_include_paths}
+      LIB_DEPS ${draco_dependency})
+
+    draco_add_library(
+      NAME draco_transcoder_lib
+      TYPE STATIC
+      SOURCES "${draco_src_root}/tools/draco_transcoder_lib.cc"
+              "${draco_src_root}/tools/draco_transcoder_lib.h"
+              ${draco_io_sources}
+      DEFINES ${draco_defines}
+      PUBLIC_INCLUDES ${draco_include_paths}
       LIB_DEPS ${draco_dependency})
 
     if(DRACO_SIMPLIFIER_SUPPORTED)

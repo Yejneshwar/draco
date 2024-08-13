@@ -20,6 +20,10 @@
 #include "draco/io/scene_io.h"
 #include "draco/scene/scene_utils.h"
 #include "draco/texture/texture_utils.h"
+#include <draco/io/gltf_decoder.h>
+
+#include <fstream>
+#include <sstream>
 
 namespace draco {
 
@@ -47,6 +51,23 @@ Status DracoTranscoder::Transcode(const FileOptions &file_options) {
   return OkStatus();
 }
 
+template <typename U, typename V>
+Status DracoTranscoder::TranscodeStream(U *in_stream, V *out_stream) {
+  DRACO_RETURN_IF_ERROR(ReadSceneStream<U>(in_stream));
+  DRACO_RETURN_IF_ERROR(CompressScene());
+  DRACO_RETURN_IF_ERROR(WriteSceneStream<V>(out_stream));
+  return OkStatus();
+}
+
+template Status DracoTranscoder::TranscodeStream<std::fstream>(
+    std::fstream *in_stream, std::fstream *out_stream);
+template Status DracoTranscoder::TranscodeStream<std::stringstream>(
+    std::stringstream *in_stream, std::stringstream *out_stream);
+template Status DracoTranscoder::TranscodeStream<std::stringstream, std::fstream>(
+    std::stringstream *in_stream, std::fstream *out_stream);
+template Status DracoTranscoder::TranscodeStream<std::fstream, std::stringstream>(
+    std::fstream *in_stream, std::stringstream *out_stream);
+
 Status DracoTranscoder::ReadScene(const FileOptions &file_options) {
   if (file_options.input_filename.empty()) {
     return Status(Status::DRACO_ERROR, "Input filename is empty.");
@@ -57,6 +78,35 @@ Status DracoTranscoder::ReadScene(const FileOptions &file_options) {
                          ReadSceneFromFile(file_options.input_filename));
   return OkStatus();
 }
+
+template <typename T>
+Status DracoTranscoder::ReadSceneStream(T* stream) {
+
+  GltfDecoder decoder;
+  DecoderBuffer buffer;
+
+  stream->seekg(0, std::ios::beg);
+ 
+  //get Size of file
+  std::streamsize size = stream->tellg();
+  stream->seekg(0, std::ios::end);
+  std::streamsize end = stream->tellg();
+  size = end - size;
+
+   std::vector<char> buf(size);
+   stream->seekg(0, std::ios::beg);
+   stream->read(&buf[0], size);
+
+   buffer.Init(buf.data(), size);
+
+  DRACO_ASSIGN_OR_RETURN(scene_, decoder.DecodeFromBufferToScene(&buffer));
+  return OkStatus();
+}
+
+template Status DracoTranscoder::ReadSceneStream<std::fstream>(
+    std::fstream *stream);
+template Status DracoTranscoder::ReadSceneStream<std::stringstream>(
+    std::stringstream *stream);
 
 Status DracoTranscoder::WriteScene(const FileOptions &file_options) {
   if (!file_options.output_bin_filename.empty() &&
@@ -74,6 +124,33 @@ Status DracoTranscoder::WriteScene(const FileOptions &file_options) {
   }
   return OkStatus();
 }
+
+template <typename T>
+Status DracoTranscoder::WriteSceneStream(T *stream) {
+    
+  stream->seekg(0, std::ios::beg);
+  std::streamsize start = stream->tellg(); 
+  stream->seekg(0, std::ios::end);
+  std::streamsize end = stream->tellg();
+
+  if (start != end) {
+    return Status(Status::IO_ERROR, "Output Stream contains data. Make sure stream has no data.");
+  }
+
+  EncoderBuffer buffer;
+
+  DRACO_RETURN_IF_ERROR(
+      gltf_encoder_.EncodeToBuffer<Scene>(*scene_, &buffer));
+
+  stream->write(buffer.data(), buffer.size());
+
+  return OkStatus();
+}
+
+template Status DracoTranscoder::WriteSceneStream<std::fstream>(
+    std::fstream *stream);
+template Status DracoTranscoder::WriteSceneStream<std::stringstream>(
+    std::stringstream *stream);
 
 Status DracoTranscoder::CompressScene() {
   // Apply geometry compression settings to all scene meshes.

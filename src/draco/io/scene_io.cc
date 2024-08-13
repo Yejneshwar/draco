@@ -52,7 +52,6 @@ StatusOr<std::unique_ptr<Scene>> ReadSceneFromFile(
 
 StatusOr<std::unique_ptr<Scene>> ReadSceneFromFile(
     const std::string &file_name, std::vector<std::string> *scene_files) {
-  std::unique_ptr<Scene> scene(new Scene());
   switch (GetSceneFileFormat(file_name)) {
     case GLTF: {
       GltfDecoder decoder;
